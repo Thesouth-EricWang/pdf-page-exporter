@@ -15,9 +15,18 @@ PDFPageExporter.exe     ← 双击这个
 pdfium.dll              ← 必须和 exe 放在一起
 ```
 
-- 系统要求：**Windows 7 及以上（64 位）**
+- 系统要求：**Windows 7 及以上**
 - 不需要安装任何运行库（exe 用静态 CRT 编译）
 - 不需要管理员权限
+
+仓库里有两种架构，**不确定就选 `bin\x86`**（32 位）：
+
+| 目录 | 架构 | 适用 |
+|---|---|---|
+| `bin\` | 64 位 | 现代电脑，渲染大图更宽松 |
+| `bin\x86\` | 32 位 | 兼容面最广，64 位系统上照样跑 |
+
+**exe 和 pdfium.dll 的架构必须一致**，不能混搭。
 
 想改 exe 的名字随便改，只要 `pdfium.dll` 还在旁边就行。
 
@@ -106,10 +115,11 @@ pdfium.dll
 需要 Visual Studio 2019/2022，安装时勾选「使用 C++ 的桌面开发」+ Windows SDK。
 
 ```bat
-build.bat
+build.bat          :: 64 位，输出到 bin\
+build.bat x86      :: 32 位，输出到 bin\x86\
 ```
 
-输出在 `bin\PDFPageExporter.exe`。如果自动找不到 `vcvars64.bat`，先设好环境变量：
+如果自动找不到 `vcvars64.bat` / `vcvars32.bat`，先设好环境变量：
 
 ```bat
 set VCVARS=C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat
@@ -123,15 +133,16 @@ build.bat
 │   ├── app.h          公共声明
 │   ├── core.cpp       PDFium 绑定、导出逻辑、Word 转换
 │   └── main.cpp       Win32 界面
-├── include/           PDFium 头文件
-├── bin/               构建产物（exe + pdfium.dll）
+├── include/           PDFium 头文件（32/64 位通用）
+├── bin/               64 位产物（exe + pdfium.dll）
+├── bin/x86/           32 位产物
 ├── licenses/          第三方许可证
 └── build.bat
 ```
 
 ### 想换成别的 pdfium 版本
 
-`include/` 和 `bin/pdfium.dll` 来自 [bblanchon/pdfium-binaries](https://github.com/bblanchon/pdfium-binaries)。换版本时两边一起换。
+`include/` 和两个 `pdfium.dll` 来自 [bblanchon/pdfium-binaries](https://github.com/bblanchon/pdfium-binaries)。换版本时按架构分别换。
 
 ---
 
@@ -139,7 +150,7 @@ build.bat
 
 PDF 渲染必须有渲染器，而纯原装的 Windows 里没有。所以这里打包了 Google 的 PDFium（Chrome 用的那个 PDF 引擎）。
 
-- 体积：**7.0 MB**，是整个程序体积的主要来源。exe 本身只有 **约 220 KB**。
+- 体积：**7.0 MB（64 位）/ 6.5 MB（32 位）**，是整个程序体积的主要来源。exe 本身只有 **170-220 KB**。
 - 协议：BSD-3-Clause，许可证见 `licenses/`。
 
 **为什么不做成单个 exe？** 把 DLL 塞进 exe 里，运行时还是得解压到临时目录才能加载，那正是「残留文件」的来源。分开放两个文件，运行时零解压、零残留。想只发一个文件的话，把它压缩成 zip 就行。
