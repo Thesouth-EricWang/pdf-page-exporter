@@ -8,7 +8,7 @@
 
 ## 一句话现状
 
-**已完成并发布。** 32 位 + 64 位双架构构建，代码已推送，交付包待打包。
+**已完成并发布。** 32 位 + 64 位双架构构建，代码已推送，交付包已出。
 
 ---
 
@@ -19,7 +19,7 @@
 | 核心功能 | ✅ 可用（PDF 导出、Word 转换、批量、无损提取、自动 dpi） |
 | 界面 | ✅ 可用（Win32，含拖放、文件列表、日志着色、「关于」入口） |
 | 打包 | ✅ 双架构 exe + pdfium.dll |
-| 交付包 | ⬜ 未做（应放 `OH-WorkSpace\工具仓库\PDF页面导出工具\`） |
+| 交付包 | ✅ 已出：`OH-WorkSpace\工具仓库\PDF页面导出工具\` |
 | 仓库 | ✅ https://github.com/Thesouth-EricWang/pdf-page-exporter |
 | 版本 | 1.1.0 |
 
@@ -27,7 +27,8 @@
 
 ## 已经做过什么（按时间倒序）
 
-1. 补上版本号（`APP_VERSION` + `version.rc`）、窗口标题带版本、「关于」按钮（点确定打开仓库）
+1. 出交付包：64 位 / 32 位两个 zip，各含中文名 exe + pdfium.dll + 使用说明.txt
+2. 补上版本号（`APP_VERSION` + `version.rc`）、窗口标题带版本、「关于」按钮（点确定打开仓库）
 2. 增加 32 位构建；`build.bat` 支持架构参数
 3. 修复：递归删目录改用纯 Win32（`SHFileOperation` 静默失败）；Word 转换参数写进 `.ps1`（环境块报 error 87）
 4. 建立 git 仓库并推送（含 exe 和 dll，方便直接下载）
@@ -39,9 +40,10 @@
 
 ## 下一步该做什么
 
-- [ ] 打交付包：`工具仓库\PDF页面导出工具\PDF页面导出工具.zip`，内含中文名 exe + pdfium.dll + 使用说明.txt
-- [ ] 按 `tool-forge` skill 的 `templates/使用说明.txt` 写使用说明（必须含 SmartScreen 绕过方法）
-- [ ] 可选项：加图标（`version.rc` 里加 `ICON`）、加"输出到固定子目录"开关
+- [ ] （可选）加图标：`version.rc` 里加 `ICON` 行
+- [ ] （可选）加「输出到固定子目录」开关，避免工具目录被成果文件夹淹没
+- [ ] （可选）把交付打包步骤写成脚本放进仓库，目前是一次性脚本（`temp/pkg/package.py`）
+- [ ] （可选）发一份到 GitHub Releases，方便别人只下 exe 不下整个仓库
 
 ---
 
@@ -72,6 +74,15 @@
 - **运行需要**：无。Windows 7 及以上
 - **处理 Word 需要**：本机装 Microsoft Word
 - **推送需要**：系统 Git Credential Manager 的凭证。⚠️ `gh` 的细粒度 PAT **没有 Contents 写权限**（能建仓库、不能推代码）；且 `gh auth setup-git` 会把 gh 助手插到 GCM 前面导致 push 403，用完要撤回
+
+---
+
+## 交付包怎么做的（兼容 Win7 的两个编码细节）
+
+1. **zip 内的中文文件名按 GBK 字节写入，且不设 UTF-8 标志位。** Python 的 `zipfile` 默认非 ASCII 名字走 UTF-8 + 标志位，而 Win7 资源管理器对那个标志位支持不可靠；按 ANSI（中文系统即 cp936）写才一定能正确显示。做法是子类化 `ZipInfo` 覆写 `_encodeFilenameFlags`。
+2. **`使用说明.txt` 存成 UTF-8 带 BOM。** Win7 记事本靠 BOM 识别编码，否则中文乱码。
+
+已用 Windows 自带的 `Expand-Archive` 验证过：解压后文件名正确，说明文件带 BOM，改名后的 exe 能正常启动。
 
 ---
 
