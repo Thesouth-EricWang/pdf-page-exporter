@@ -1,0 +1,19 @@
+# Build artifacts
+*.obj
+*.o
+*.pdb
+*.ilk
+*.exp
+*.lib
+*.res
+
+# Keep the shipped binary, so people can grab a working copy without building.
+!bin/PDFPageExporter.exe
+!bin/pdfium.dll
+
+# Editor / OS
+.vs/
+.vscode/
+*.user
+Thumbs.db
+desktop.ini
