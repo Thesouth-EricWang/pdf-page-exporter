@@ -54,16 +54,25 @@ if errorlevel 1 ( echo [ERROR] vcvars failed & exit /b 1 )
 cd /d "%ROOT%"
 if not exist "%OUTDIR%" mkdir "%OUTDIR%"
 
+rem Compile the version resource explicitly; cl does not always route .rc to rc.exe.
+where rc.exe >nul 2>nul
+if errorlevel 1 ( echo [ERROR] rc.exe not found in PATH ^(run from a VS developer prompt^) & exit /b 1 )
+rc /nologo /fo "%ROOT%\src\version.res" "%ROOT%\src\version.rc"
+if errorlevel 1 ( echo [ERROR] resource compile failed & exit /b 1 )
+
 rem /MT = static CRT, so the exe needs no VC++ redistributable.
 cl /nologo /EHsc /O2 /MT /W3 /utf-8 /DUNICODE /D_UNICODE ^
    /I"%ROOT%\include" ^
-   "%ROOT%\src\core.cpp" "%ROOT%\src\main.cpp" ^
+   "%ROOT%\src\core.cpp" "%ROOT%\src\main.cpp" "%ROOT%\src\version.res" ^
    /link /SUBSYSTEM:WINDOWS /ENTRY:wWinMainCRTStartup /OPT:REF /OPT:ICF ^
    user32.lib gdi32.lib gdiplus.lib comdlg32.lib shell32.lib ole32.lib comctl32.lib ^
    /OUT:"%OUTDIR%\PDFPageExporter.exe"
 if errorlevel 1 ( echo [ERROR] build failed & exit /b 1 )
 
 del /q "%ROOT%\*.obj" 2>nul
+del /q "%ROOT%\src\*.obj" 2>nul
+del /q "%ROOT%\*.res" 2>nul
+del /q "%ROOT%\src\*.res" 2>nul
 echo.
 echo Build OK: %OUTDIR%\PDFPageExporter.exe
 for %%F in ("%OUTDIR%\PDFPageExporter.exe") do echo Size: %%~zF bytes

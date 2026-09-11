@@ -29,6 +29,7 @@ enum
     IDC_DPI,
     IDC_OPENAFTER,
     IDC_START,
+    IDC_ABOUT,
     IDC_LOG,
     IDC_HINT
 };
@@ -50,6 +51,9 @@ static bool g_running = false;
 static std::vector<std::wstring> g_files;
 
 static const wchar_t WND_CLASS[] = L"PdfPageExporterWnd";
+static const wchar_t APP_NAME[] = L"PDF / Word 页面导出工具";
+static const wchar_t APP_VERSION[] = L"1.1.0";
+static const wchar_t REPO_URL[] = L"https://github.com/Thesouth-EricWang/pdf-page-exporter";
 static const wchar_t APP_TITLE[] = L"PDF / Word 页面导出工具";
 
 static const wchar_t FILTER[] =
@@ -90,6 +94,16 @@ static void OpenFolder(const std::wstring &dir)
     if (dir.empty())
         return;
     ShellExecuteW(nullptr, L"open", dir.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+}
+
+static void ShowAbout(HWND hwnd)
+{
+    std::wstring msg = std::wstring(APP_NAME) + L"\r\n版本 " + APP_VERSION +
+                       L"\r\n\r\n把 PDF 或 Word 文档的指定页导出成图片。"
+                       L"\r\n\r\n仓库：\r\n" + REPO_URL +
+                       L"\r\n\r\n（点「确定」用浏览器打开仓库）";
+    if (MessageBoxW(hwnd, msg.c_str(), APP_TITLE, MB_OKCANCEL | MB_ICONINFORMATION) == IDOK)
+        ShellExecuteW(nullptr, L"open", REPO_URL, nullptr, nullptr, SW_SHOWNORMAL);
 }
 
 static void RefreshList()
@@ -291,6 +305,7 @@ static void CreateControls(HWND hwnd)
         {L"STATIC", L"压缩档 1-100：数值越小文件越小（默认 85）", WS_CHILD | WS_VISIBLE,
          IDC_HINT + 100, 22, 266, 700, 18},
         {L"BUTTON", L"开始导出", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, IDC_START, 10, 305, 110, 30},
+        {L"BUTTON", L"关于", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, IDC_ABOUT, 130, 305, 80, 30},
         {L"STATIC", L"日志", WS_CHILD | WS_VISIBLE, 0, 10, 345, 60, 18},
     };
 
@@ -355,6 +370,8 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
     case WM_CREATE:
         CreateControls(hwnd);
         DragAcceptFiles(hwnd, TRUE);
+        AppendLog(Fmt(L"%s  v%s", APP_NAME, APP_VERSION), CLR_DIM, true);
+        AppendLog(L"仓库：" + std::wstring(REPO_URL), CLR_DIM);
         AppendLog(L"就绪。把 PDF 或 Word 文档拖进来，或点「添加…」。", CLR_DIM);
         return 0;
 
@@ -408,6 +425,9 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
             return 0;
         case IDC_START:
             StartExport(hwnd);
+            return 0;
+        case IDC_ABOUT:
+            ShowAbout(hwnd);
             return 0;
         case IDC_FMT:
             if (HIWORD(wp) == CBN_SELCHANGE)
@@ -520,8 +540,9 @@ int WINAPI wWinMain(HINSTANCE inst, HINSTANCE, LPWSTR, int)
 
     RECT rc = {0, 0, 780, 640};
     AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, FALSE);
+    std::wstring title = std::wstring(APP_NAME) + L"  v" + APP_VERSION;
     HWND hwnd = CreateWindowExW(
-        0, WND_CLASS, APP_TITLE, WS_OVERLAPPEDWINDOW,
+        0, WND_CLASS, title.c_str(), WS_OVERLAPPEDWINDOW,
         CW_USEDEFAULT, CW_USEDEFAULT, rc.right - rc.left, rc.bottom - rc.top,
         nullptr, nullptr, inst, nullptr);
     if (!hwnd)
